@@ -1,16 +1,11 @@
-from dataloader import load_data, show_img
-from model import Net
 import torch.optim as optim
 import torch.nn as nn
 
 
-if __name__ == '__main__':
-    net = Net()
+def train(net, trainloader, testloader, classes, batch_size):
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-    trainloader, testloader, classes, batch_size = load_data()
 
     for epoch in range(2):  # loop over the dataset multiple times
 
