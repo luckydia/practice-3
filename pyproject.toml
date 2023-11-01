@@ -6,11 +6,14 @@ authors = ["Dani <jessi-sleto@ya.ru>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.13"
 torch = "^2.1.0"
 torchvision = "^0.16.0"
 matplotlib = "^3.8.0"
 numpy = "^1.26.1"
+lightning = "^2.1.0"
+torchmetrics = "^1.2.0"
+wandb = "^0.15.12"
 
 
 [build-system]
