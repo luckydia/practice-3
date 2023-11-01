@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchmetrics.functional import accuracy
+from timm.scheduler import TanhLRScheduler
 
 
 class LitModel(L.LightningModule):
@@ -36,6 +37,7 @@ class LitModel(L.LightningModule):
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
+        self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -49,5 +51,6 @@ class LitModel(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        # scheduler = TanhLRScheduler(optimizer, ...)
+        return optimizer # [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
 
