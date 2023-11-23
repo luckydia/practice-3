@@ -8,12 +8,12 @@ def main(hparams=[]):
     dm = DataModule()
     wandb_logger = WandbLogger(project='vit-model', log_model='all')
 
-    model = ViT(img_size=32, patch_size=16, in_chans=3, num_classes=10,
+    model = ViT(img_size=64, patch_size=16, in_chans=3, num_classes=10,
                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                 qkv_bias=False, drop_rate=0.1, )
 
     trainer = L.Trainer(
-        max_epochs=10,
+        max_epochs=30,
         accelerator="auto",
         devices=1,
         logger=wandb_logger)

@@ -33,18 +33,17 @@ class PatchEmbedding(L.LightningModule):
 
 
 class MLP(L.LightningModule):
-    def __init__(self, in_features, hidden_features=None, out_features=None, drop=0., act_layer = nn.GELU):
+    def __init__(self, in_features, hidden_features=None, out_features=None, drop=0.1, act_layer = nn.GELU):
         super().__init__()
 
         # Linear Layers
         self.model = nn.Sequential(
-            nn.Linear(768, 3072),
-            nn.ReLU(),
+            nn.Linear(in_features, hidden_features),
+            act_layer(),
             nn.Dropout(drop),
-            nn.Linear(3072, 768),
+            nn.Linear(hidden_features, out_features),
             nn.Dropout(drop)
         )
-
 
     def forward(self, x):
         x = self.model(x)
@@ -52,7 +51,7 @@ class MLP(L.LightningModule):
 
 
 class Attention(L.LightningModule):
-    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., out_drop=0.):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0.1, out_drop=0.1):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -81,7 +80,7 @@ class Attention(L.LightningModule):
 
 
 class Block(L.LightningModule):
-    def __init__(self, dim, num_heads=8, mlp_ratio=4, drop_rate=0.):
+    def __init__(self, dim, num_heads=8, mlp_ratio=4, drop_rate=0.1):
         super().__init__()
 
         # Normalization
@@ -97,22 +96,25 @@ class Block(L.LightningModule):
         self.norm2 = nn.LayerNorm(dim)
 
         # MLP
-        self.mlp = MLP(dim, int(dim * mlp_ratio))
+        self.mlp = MLP(dim, int(dim * mlp_ratio), dim)
 
 
     def forward(self, x):
         # Attetnion
+        x1 = x
         x = self.norm1(x)
         x = self.drop(self.attn(x))
+        x += x1
+        x2 = x
         x = self.norm2(x)
-
         # MLP
         x = self.mlp(x)
+        x += x2
         return x
 
 
 class Transformer(L.LightningModule):
-    def __init__(self, depth, dim, num_heads=8, mlp_ratio=4, drop_rate=0.):
+    def __init__(self, depth, dim, num_heads=8, mlp_ratio=4, drop_rate=0.1):
         super().__init__()
         self.blocks = nn.ModuleList([
             Block(dim, num_heads, mlp_ratio, drop_rate)
@@ -130,7 +132,7 @@ class ViT(L.LightningModule):
 
     def __init__(self, img_size=64, patch_size=16, in_chans=3, num_classes=10,
                  embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
-                 qkv_bias=False, drop_rate=0., ):
+                 qkv_bias=False, drop_rate=0.1, ):
         super().__init__()
 
         # Присвоение переменных
@@ -173,7 +175,7 @@ class ViT(L.LightningModule):
     def training_step(self, batch):
         x, y = batch
         logits = self(x)
-        loss = F.nll_loss(logits, y)
+        loss = F.cross_entropy(logits, y)
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
@@ -182,7 +184,7 @@ class ViT(L.LightningModule):
         print(x.shape, y.shape)
         logits = self(x)
         print(logits.shape, y.shape)
-        loss = F.nll_loss(logits, y)
+        loss = F.cross_entropy(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = accuracy(preds, y, task="multiclass", num_classes=10)
         self.log("val_loss", loss, prog_bar=True)
